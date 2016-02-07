@@ -158,6 +158,7 @@
           :input (if target-is-default-input-p target nil)
           :buffer "*helm complete*")))
 
+;;;###autoload
 (defun helm-slime-complete ()
   "Select a symbol from the SLIME's completion systems."
   (interactive)
@@ -190,6 +191,7 @@
         ("Restart" . slime-restart-connection-at-point)
         ("Quit" . slime-quit-connection-at-point)))))
 
+;;;###autoload
 (defun helm-slime-list-connections ()
   "Yet another `slime-list-connections' with `helm'."
   (interactive)
@@ -254,6 +256,7 @@
     helm-slime--c-source-slime-apropos-symbol-all-external-package
     helm-slime--c-source-slime-apropos-symbol-all-package))
 
+;;;###autoload
 (defun helm-slime-apropos ()
   "Yet another `slime-apropos' with `helm'."
   (interactive)
@@ -271,6 +274,8 @@
      . (lambda (cand)
          (slime-repl-history-replace 'backward
                                      (concat "^" (regexp-quote cand) "$"))))))
+
+;;;###autoload
 (defun helm-slime-repl-history ()
   "Select an input from the SLIME repl's history and insert it."
   (interactive)
