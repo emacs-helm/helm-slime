@@ -4,6 +4,7 @@
 ;;               2012 Michael Markert <markert.michael@googlemail.com>
 ;; Author: Takeshi Banse <takebi@laafc.net>
 ;; Keywords: convenience, helm, slime
+;; Package-Requires: ((helm-core "1.9.8") (slime "2.18") (cl-lib "0.5"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -56,7 +57,7 @@
 (require 'slime-c-p-c)
 (require 'slime-fuzzy)
 (require 'slime-repl)
-
+(require 'cl-lib)
 
 (defvar ascsa-complete-target "")
 
@@ -67,7 +68,7 @@
       (delete-region (point) pt)))
   (insert candidate))
 
-(defun* ascsa-symbol-position-funcall
+(cl-defun ascsa-symbol-position-funcall
     (f &optional (end-pt (point)) (beg-pt (slime-symbol-start-pos)))
   (let* ((end (move-marker (make-marker) end-pt))
          (beg (move-marker (make-marker) beg-pt)))
@@ -95,8 +96,8 @@
                                                  s))))
     (let* ((completion-result (with-current-buffer helm-current-buffer
                                 (funcall complete-fn)))
-           (completions (first completion-result))
-           (base  (second completion-result)))
+           (completions (cl-first completion-result))
+           (base  (cl-second completion-result)))
       (with-current-buffer (helm-candidate-buffer 'global)
         (funcall insert-fn completions base put-text-property1)))))
 (defun ascsa-asc-init-candidates-buffer-basic-insert-function (completions base put-text-property1)
@@ -117,14 +118,14 @@
   (ascsa-asc-init-candidates-buffer-base
    (slime-curry 'ascsa-symbol-position-funcall 'slime-contextual-completions)
    'ascsa-asc-init-candidates-buffer-basic-insert-function))
-(defun* ascsa-asc-fuzzy-init (&optional
-                              (insert-choice-fn
-                               'slime-fuzzy-insert-completion-choice))
+(cl-defun ascsa-asc-fuzzy-init (&optional
+                                (insert-choice-fn
+                                 'slime-fuzzy-insert-completion-choice))
   (ascsa-asc-init-candidates-buffer-base
    (slime-curry 'slime-fuzzy-completions ascsa-complete-target)
    (lambda (completions _ put-text-property1)
      (with-current-buffer (helm-candidate-buffer 'global)
-       (let ((max-len (loop for (x _) in completions maximize (length x))))
+       (let ((max-len (cl-loop for (x _) in completions maximize (length x))))
          (dolist (c completions)
            (funcall insert-choice-fn c max-len)
            (funcall put-text-property1 (car c))))))))
@@ -216,8 +217,8 @@
     (candidates
      . (lambda ()
          (with-current-buffer helm-current-buffer
-           (loop for plist in (slime-eval ,slime-expressions)
-                 collect (plist-get plist :designator)))))
+           (cl-loop for plist in (slime-eval ,slime-expressions)
+                    collect (plist-get plist :designator)))))
     (type . helm-slime-apropos)))
 (defvar helm-c-source-slime-apropos-symbol-current-package
   (ascsa-apropos-source "SLIME apropos (current package)"
