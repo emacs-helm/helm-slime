@@ -150,7 +150,6 @@
 
 (defun ascsa-helm-complete (sources target &optional limit idle-delay input-idle-delay target-is-default-input-p)
   (let ((helm-candidate-number-limit (or limit helm-candidate-number-limit))
-        (helm-idle-delay (or idle-delay helm-idle-delay))
         (helm-input-idle-delay (or input-idle-delay helm-input-idle-delay))
         (helm-complete-targettarget target)
         (helm-execute-action-at-once-if-one t)
