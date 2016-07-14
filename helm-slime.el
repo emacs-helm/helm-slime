@@ -1,4 +1,4 @@
-;;; helm-slime.el --- helm-sources and some utilities for SLIME.
+;;; helm-slime.el --- helm-sources and some utilities for SLIME. -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2009 Takeshi Banse <takebi@laafc.net>
 ;;               2012 Michael Markert <markert.michael@googlemail.com>
@@ -77,15 +77,13 @@
       (set-marker end nil)
       (set-marker beg nil))))
 
-(define-helm-type-attribute 'helm-slime-complete
-  '((action
-     . (("Insert" . ascsa-insert)
-        ("Describe symbol" . slime-describe-symbol)
-        ("Edit definition" . slime-edit-definition)))
-    (persistent-action . slime-describe-symbol)
-    (volatile)
-    (candidates-in-buffer)
-    (get-line . buffer-substring))
+(defclass helm-slime-complete-type (helm-source-in-buffer)
+  ((action :initform '(("Insert" . ascsa-insert)
+                       ("Describe symbol" . slime-describe-symbol)
+                       ("Edit definition" . slime-edit-definition)))
+   (persistent-action :initform #'slime-describe-symbol)
+   (volatile :initform t)
+   (get-line :initform #'buffer-substring))
   "SLIME complete.")
 
 (defun ascsa-asc-init-candidates-buffer-base (complete-fn insert-fn)
@@ -134,17 +132,14 @@
 ;; These sources are private for the use of the `helm-slime-complete'
 ;; command, so I should not make `helm-c-source-*' symbols.
 (defvar helm-slime-simple-complete-source
-  '((name . "SLIME simple complete")
-    (init . ascsa-asc-simple-init)
-    (type . helm-slime-complete)))
+  (helm-make-source "SLIME simple complete" 'helm-slime-complete-type
+    :init #'ascsa-asc-simple-init))
 (defvar helm-slime-compound-complete-source
-  '((name . "SLIME compound complete")
-    (init . ascsa-asc-compound-init)
-    (type . helm-slime-complete)))
+  (helm-make-source "SLIME compound complete" 'helm-slime-complete-type
+    :init #'ascsa-asc-compound-init))
 (defvar helm-slime-fuzzy-complete-source
-  '((name . "SLIME fuzzy complete")
-    (init . ascsa-asc-fuzzy-init)
-    (type . helm-slime-complete)))
+  (helm-make-source "SLIME fuzzy complete" 'helm-slime-complete-type
+    :init #'ascsa-asc-fuzzy-init))
 (defvar helm-slime-complete-sources
   '(helm-slime-simple-complete-source
     helm-slime-fuzzy-complete-source
@@ -204,23 +199,20 @@
   (when (not helm-source-name)
     ad-do-it))
 
-(define-helm-type-attribute 'helm-slime-apropos
-  '((action
-     . (("Describe symbol" . slime-describe-symbol)
-        ("Edit definition" . slime-edit-definition)))
-    (persistent-action . slime-describe-symbol)
-    (requires-pattern . 2))
-    ;;(volatile)
+(defclass helm-slime-apropos-type (helm-source-sync)
+  ((action :initform '(("Describe symbol" . slime-describe-symbol)
+                       ("Edit definition" . slime-edit-definition)))
+   (persistent-action :initform #'slime-describe-symbol)
+   ;;(volatile :initform t)
+   (requires-pattern :initform 2))
   "SLIME apropos.")
 
 (defun ascsa-apropos-source (name slime-expressions)
-  `((name . ,name)
-    (candidates
-     . (lambda ()
-         (with-current-buffer helm-current-buffer
-           (cl-loop for plist in (slime-eval ,slime-expressions)
-                    collect (plist-get plist :designator)))))
-    (type . helm-slime-apropos)))
+  (helm-make-source name 'helm-slime-apropos-type
+    :candidates `(lambda ()
+                   (with-current-buffer helm-current-buffer
+                     (cl-loop for plist in (slime-eval ,slime-expressions)
+                              collect (plist-get plist :designator))))))
 (defvar helm-c-source-slime-apropos-symbol-current-package
   (ascsa-apropos-source "SLIME apropos (current package)"
                         (quote
