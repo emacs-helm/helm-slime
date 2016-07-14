@@ -103,10 +103,8 @@
 (defun ascsa-asc-init-candidates-buffer-basic-insert-function (completions base put-text-property1)
   (let ((len (length base)))
     (dolist (c completions)
-      (let ((start (point))
-            end)
+      (let ((start (point)))
         (insert c)
-        (setq end (point))
         (put-text-property start (+ start len) 'face 'bold)
         (insert "\n")
         (funcall put-text-property1 c)))))
@@ -145,10 +143,9 @@
     helm-slime-fuzzy-complete-source
     helm-slime-compound-complete-source))
 
-(defun ascsa-helm-complete (sources target &optional limit idle-delay input-idle-delay target-is-default-input-p)
+(defun ascsa-helm-complete (sources target &optional limit input-idle-delay target-is-default-input-p)
   (let ((helm-candidate-number-limit (or limit helm-candidate-number-limit))
         (helm-input-idle-delay (or input-idle-delay helm-input-idle-delay))
-        (helm-complete-targettarget target)
         (helm-execute-action-at-once-if-one t)
         (ascsa-complete-target target)
         (enable-recursive-minibuffers t)
@@ -278,7 +275,7 @@
                         #'buffer-substring-no-properties
                         (point)
                         slime-repl-input-start-mark)
-                       nil nil nil t))
+                       nil nil t))
 
 (defun helm-slime-init ()
   (run-hooks 'helm-slime-init-hook))
