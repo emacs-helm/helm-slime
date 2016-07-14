@@ -155,7 +155,7 @@
         (helm-execute-action-at-once-if-one t)
         (ascsa-complete-target target)
         (enable-recursive-minibuffers t)
-        helm-samewindow)
+        helm-full-frame)
     (helm :sources sources
           :input (if target-is-default-input-p target nil)
           :buffer "*helm complete*")))
