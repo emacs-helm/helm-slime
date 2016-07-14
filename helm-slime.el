@@ -96,8 +96,10 @@
                                                  s))))
     (let* ((completion-result (with-current-buffer helm-current-buffer
                                 (funcall complete-fn)))
-           (completions (cl-first completion-result))
-           (base  (cl-second completion-result)))
+           (completions (if (listp (cl-first completion-result))
+                            (cl-first completion-result)
+                          completion-result))
+           (base  (slime-symbol-at-point)))
       (with-current-buffer (helm-candidate-buffer 'global)
         (funcall insert-fn completions base put-text-property1)))))
 (defun ascsa-asc-init-candidates-buffer-basic-insert-function (completions base put-text-property1)
