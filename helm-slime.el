@@ -1,9 +1,10 @@
-;;; helm-slime.el --- helm-sources and some utilities for SLIME.
+;;; helm-slime.el --- helm-sources and some utilities for SLIME. -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2009 Takeshi Banse <takebi@laafc.net>
 ;;               2012 Michael Markert <markert.michael@googlemail.com>
 ;; Author: Takeshi Banse <takebi@laafc.net>
 ;; Keywords: convenience, helm, slime
+;; Package-Requires: ((helm-core "1.9.8") (slime "2.18") (cl-lib "0.5"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -56,7 +57,7 @@
 (require 'slime-c-p-c)
 (require 'slime-fuzzy)
 (require 'slime-repl)
-
+(require 'cl-lib)
 
 (defvar ascsa-complete-target "")
 
@@ -67,7 +68,7 @@
       (delete-region (point) pt)))
   (insert candidate))
 
-(defun* ascsa-symbol-position-funcall
+(cl-defun ascsa-symbol-position-funcall
     (f &optional (end-pt (point)) (beg-pt (slime-symbol-start-pos)))
   (let* ((end (move-marker (make-marker) end-pt))
          (beg (move-marker (make-marker) beg-pt)))
@@ -76,15 +77,13 @@
       (set-marker end nil)
       (set-marker beg nil))))
 
-(define-helm-type-attribute 'helm-slime-complete
-  '((action
-     . (("Insert" . ascsa-insert)
-        ("Describe symbol" . slime-describe-symbol)
-        ("Edit definition" . slime-edit-definition)))
-    (persistent-action . slime-describe-symbol)
-    (volatile)
-    (candidates-in-buffer)
-    (get-line . buffer-substring))
+(defclass helm-slime-complete-type (helm-source-in-buffer)
+  ((action :initform '(("Insert" . ascsa-insert)
+                       ("Describe symbol" . slime-describe-symbol)
+                       ("Edit definition" . slime-edit-definition)))
+   (persistent-action :initform #'slime-describe-symbol)
+   (volatile :initform t)
+   (get-line :initform #'buffer-substring))
   "SLIME complete.")
 
 (defun ascsa-asc-init-candidates-buffer-base (complete-fn insert-fn)
@@ -95,17 +94,17 @@
                                                  s))))
     (let* ((completion-result (with-current-buffer helm-current-buffer
                                 (funcall complete-fn)))
-           (completions (first completion-result))
-           (base  (second completion-result)))
+           (completions (if (listp (cl-first completion-result))
+                            (cl-first completion-result)
+                          completion-result))
+           (base  (slime-symbol-at-point)))
       (with-current-buffer (helm-candidate-buffer 'global)
         (funcall insert-fn completions base put-text-property1)))))
 (defun ascsa-asc-init-candidates-buffer-basic-insert-function (completions base put-text-property1)
   (let ((len (length base)))
     (dolist (c completions)
-      (let ((start (point))
-            end)
+      (let ((start (point)))
         (insert c)
-        (setq end (point))
         (put-text-property start (+ start len) 'face 'bold)
         (insert "\n")
         (funcall put-text-property1 c)))))
@@ -117,45 +116,40 @@
   (ascsa-asc-init-candidates-buffer-base
    (slime-curry 'ascsa-symbol-position-funcall 'slime-contextual-completions)
    'ascsa-asc-init-candidates-buffer-basic-insert-function))
-(defun* ascsa-asc-fuzzy-init (&optional
-                              (insert-choice-fn
-                               'slime-fuzzy-insert-completion-choice))
+(cl-defun ascsa-asc-fuzzy-init (&optional
+                                (insert-choice-fn
+                                 'slime-fuzzy-insert-completion-choice))
   (ascsa-asc-init-candidates-buffer-base
    (slime-curry 'slime-fuzzy-completions ascsa-complete-target)
    (lambda (completions _ put-text-property1)
      (with-current-buffer (helm-candidate-buffer 'global)
-       (let ((max-len (loop for (x _) in completions maximize (length x))))
+       (let ((max-len (cl-loop for (x _) in completions maximize (length x))))
          (dolist (c completions)
            (funcall insert-choice-fn c max-len)
            (funcall put-text-property1 (car c))))))))
 ;; These sources are private for the use of the `helm-slime-complete'
 ;; command, so I should not make `helm-c-source-*' symbols.
 (defvar helm-slime-simple-complete-source
-  '((name . "SLIME simple complete")
-    (init . ascsa-asc-simple-init)
-    (type . helm-slime-complete)))
+  (helm-make-source "SLIME simple complete" 'helm-slime-complete-type
+    :init #'ascsa-asc-simple-init))
 (defvar helm-slime-compound-complete-source
-  '((name . "SLIME compound complete")
-    (init . ascsa-asc-compound-init)
-    (type . helm-slime-complete)))
+  (helm-make-source "SLIME compound complete" 'helm-slime-complete-type
+    :init #'ascsa-asc-compound-init))
 (defvar helm-slime-fuzzy-complete-source
-  '((name . "SLIME fuzzy complete")
-    (init . ascsa-asc-fuzzy-init)
-    (type . helm-slime-complete)))
+  (helm-make-source "SLIME fuzzy complete" 'helm-slime-complete-type
+    :init #'ascsa-asc-fuzzy-init))
 (defvar helm-slime-complete-sources
   '(helm-slime-simple-complete-source
     helm-slime-fuzzy-complete-source
     helm-slime-compound-complete-source))
 
-(defun ascsa-helm-complete (sources target &optional limit idle-delay input-idle-delay target-is-default-input-p)
+(defun ascsa-helm-complete (sources target &optional limit input-idle-delay target-is-default-input-p)
   (let ((helm-candidate-number-limit (or limit helm-candidate-number-limit))
-        (helm-idle-delay (or idle-delay helm-idle-delay))
         (helm-input-idle-delay (or input-idle-delay helm-input-idle-delay))
-        (helm-complete-targettarget target)
         (helm-execute-action-at-once-if-one t)
         (ascsa-complete-target target)
         (enable-recursive-minibuffers t)
-        helm-samewindow)
+        helm-full-frame)
     (helm :sources sources
           :input (if target-is-default-input-p target nil)
           :buffer "*helm complete*")))
@@ -202,23 +196,20 @@
   (when (not helm-source-name)
     ad-do-it))
 
-(define-helm-type-attribute 'helm-slime-apropos
-  '((action
-     . (("Describe symbol" . slime-describe-symbol)
-        ("Edit definition" . slime-edit-definition)))
-    (persistent-action . slime-describe-symbol)
-    (requires-pattern . 2))
-    ;;(volatile)
+(defclass helm-slime-apropos-type (helm-source-sync)
+  ((action :initform '(("Describe symbol" . slime-describe-symbol)
+                       ("Edit definition" . slime-edit-definition)))
+   (persistent-action :initform #'slime-describe-symbol)
+   ;;(volatile :initform t)
+   (requires-pattern :initform 2))
   "SLIME apropos.")
 
 (defun ascsa-apropos-source (name slime-expressions)
-  `((name . ,name)
-    (candidates
-     . (lambda ()
-         (with-current-buffer helm-current-buffer
-           (loop for plist in (slime-eval ,slime-expressions)
-                 collect (plist-get plist :designator)))))
-    (type . helm-slime-apropos)))
+  (helm-make-source name 'helm-slime-apropos-type
+    :candidates `(lambda ()
+                   (with-current-buffer helm-current-buffer
+                     (cl-loop for plist in (slime-eval ,slime-expressions)
+                              collect (plist-get plist :designator))))))
 (defvar helm-c-source-slime-apropos-symbol-current-package
   (ascsa-apropos-source "SLIME apropos (current package)"
                         (quote
@@ -284,7 +275,7 @@
                         #'buffer-substring-no-properties
                         (point)
                         slime-repl-input-start-mark)
-                       nil nil nil t))
+                       nil nil t))
 
 (defun helm-slime-init ()
   (run-hooks 'helm-slime-init-hook))
