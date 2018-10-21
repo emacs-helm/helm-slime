@@ -1,0 +1,27 @@
+#+TITLE: Helm-SLIME
+
+Helm for [[https://github.com/slime/slime][SLIME]], the Superior Lisp Interaction Mode for Emacs.
+
+* Installation
+
+- Add ~helm-slime.el~ to your ~load-path~.
+- Set up SLIME properly.
+- Call ~slime-setup~ and include ~'helm-slime~:
+#+BEGIN_SRC elisp
+  (slime-setup '([others contribs ...] helm-slime))
+#+END_SRC
+
+  or simply ~(require 'helm-slime)~ in some appropriate manner.
+
+* Usage
+
+Helm-SLIME defines a few new commands:
+
+- helm-slime-complete :: Select a symbol from the SLIME completion systems.
+
+- helm-slime-list-connections :: Yet another ~slime-list-connections~ with Helm.
+
+- helm-slime-apropos :: Yet another ~slime-apropos~ with Helm.
+
+- helm-slime-repl-history :: Select an input from the SLIME REPL history and
+     insert it.
