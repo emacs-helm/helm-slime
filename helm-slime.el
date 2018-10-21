@@ -2,6 +2,8 @@
 
 ;; Copyright (C) 2009 Takeshi Banse <takebi@laafc.net>
 ;;               2012 Michael Markert <markert.michael@googlemail.com>
+;;               2013 Thierry Volpiatto <thierry.volpiatto@gmail.com>
+;;               2016 Syohei Yoshida <syohex@gmail.com>
 ;; Author: Takeshi Banse <takebi@laafc.net>
 ;; Keywords: convenience, helm, slime
 ;; Package-Requires: ((helm-core "1.9.8") (slime "2.18") (cl-lib "0.5"))
