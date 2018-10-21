@@ -4,9 +4,12 @@
 ;;               2012 Michael Markert <markert.michael@googlemail.com>
 ;;               2013 Thierry Volpiatto <thierry.volpiatto@gmail.com>
 ;;               2016 Syohei Yoshida <syohex@gmail.com>
+;;               2018 Pierre Neidhardt <mail@ambrevar.xyz>
 ;; Author: Takeshi Banse <takebi@laafc.net>
+;; URL: https://github.com/emacs-helm/helm-slime
+;; Version: 0.0.1
 ;; Keywords: convenience, helm, slime
-;; Package-Requires: ((helm-core "1.9.8") (slime "2.18") (cl-lib "0.5"))
+;; Package-Requires: ((emacs "24") (helm-core "1.9.8") (slime "2.18") (cl-lib "0.5"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -40,7 +43,7 @@
 
 ;;; Commands:
 ;;
-;; Below are complete command list:
+;; The complete command list:
 ;;
 ;;  `helm-slime-complete'
 ;;    Select a symbol from the SLIME's completion systems.
