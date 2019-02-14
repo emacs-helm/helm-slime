@@ -195,11 +195,6 @@
   (interactive)
   (helm 'helm-slime--c-source-slime-connection))
 
-(defadvice helm-slime-update-connection-list (around ignore activate)
-  "Don't call slime-update-connection-list if helming. (This is iffy.)"
-  (when (not helm-source-name)
-    ad-do-it))
-
 (defclass helm-slime-apropos-type (helm-source-sync)
   ((action :initform '(("Describe symbol" . slime-describe-symbol)
                        ("Edit definition" . slime-edit-definition)))
