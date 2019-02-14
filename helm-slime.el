@@ -65,6 +65,7 @@
 (defvar helm-slime--complete-target "")
 
 (defun helm-slime--insert (candidate)
+  "Default action for `helm-slime-complete-type'."
   (let ((pt (point)))
     (when (and (search-backward helm-slime--complete-target nil t)
                (string= (buffer-substring (point) pt) helm-slime--complete-target))
@@ -103,6 +104,7 @@
            (base  (slime-symbol-at-point)))
       (with-current-buffer (helm-candidate-buffer 'global)
         (funcall insert-fn completions base put-text-property1)))))
+
 (defun helm-slime--asc-init-candidates-buffer-basic-insert-function (completions base put-text-property1)
   (let ((len (length base)))
     (dolist (c completions)
@@ -111,14 +113,17 @@
         (put-text-property start (+ start len) 'face 'bold)
         (insert "\n")
         (funcall put-text-property1 c)))))
+
 (defun helm-slime--asc-simple-init ()
   (helm-slime--asc-init-candidates-buffer-base
    (slime-curry 'slime-simple-completions helm-slime--complete-target)
    'helm-slime--asc-init-candidates-buffer-basic-insert-function))
+
 (defun helm-slime--asc-compound-init ()
   (helm-slime--asc-init-candidates-buffer-base
    (slime-curry 'helm-slime--symbol-position-funcall 'slime-contextual-completions)
    'helm-slime--asc-init-candidates-buffer-basic-insert-function))
+
 (cl-defun helm-slime--asc-fuzzy-init (&optional
                                 (insert-choice-fn
                                  'slime-fuzzy-insert-completion-choice))
@@ -134,18 +139,23 @@
 (defvar helm-slime-simple-complete-source
   (helm-make-source "SLIME simple complete" 'helm-slime-complete-type
     :init #'helm-slime--asc-simple-init))
+
 (defvar helm-slime-compound-complete-source
   (helm-make-source "SLIME compound complete" 'helm-slime-complete-type
     :init #'helm-slime--asc-compound-init))
+
 (defvar helm-slime-fuzzy-complete-source
   (helm-make-source "SLIME fuzzy complete" 'helm-slime-complete-type
     :init #'helm-slime--asc-fuzzy-init))
+
 (defvar helm-slime-complete-sources
   '(helm-slime-simple-complete-source
     helm-slime-fuzzy-complete-source
-    helm-slime-compound-complete-source))
+    helm-slime-compound-complete-source)
+  "List of Helm sources used for completion.")
 
 (defun helm-slime--helm-complete (sources target &optional limit input-idle-delay target-is-default-input-p)
+  "Run Helm for completion."
   (let ((helm-candidate-number-limit (or limit helm-candidate-number-limit))
         (helm-input-idle-delay (or input-idle-delay helm-input-idle-delay))
         (helm-execute-action-at-once-if-one t)
@@ -158,11 +168,11 @@
 
 ;;;###autoload
 (defun helm-slime-complete ()
-  "Select a symbol from the SLIME's completion systems."
+  "Select a symbol from the SLIME completion systems."
   (interactive)
   (helm-slime--helm-complete helm-slime-complete-sources
-                       (helm-slime--symbol-position-funcall
-                        #'buffer-substring-no-properties)))
+                             (helm-slime--symbol-position-funcall
+                              #'buffer-substring-no-properties)))
 
 (defvar helm-slime--c-source-slime-connection
   '((name . "SLIME connections")
@@ -181,7 +191,7 @@
                            p))))
            (mapcar collect (reverse slime-net-processes)))))
     (action
-     . (("Go to repl"
+     . (("Go to REPL"
          . (lambda (p)
              (let ((slime-dispatching-connection p))
                (switch-to-buffer (slime-output-buffer)))))
@@ -204,11 +214,13 @@
   "SLIME apropos.")
 
 (defun helm-slime--apropos-source (name slime-expressions)
+  "Build source that provides Helm completion against `slime-apropos'."
   (helm-make-source name 'helm-slime-apropos-type
     :candidates `(lambda ()
                    (with-current-buffer helm-current-buffer
                      (cl-loop for plist in (slime-eval ,slime-expressions)
                               collect (plist-get plist :designator))))))
+
 (defvar helm-slime--c-source-slime-apropos-symbol-current-package
   (helm-slime--apropos-source "SLIME apropos (current package)"
                         (quote
@@ -218,6 +230,7 @@
                            nil
                            ,(or slime-buffer-package
                                 (slime-current-package))))))
+
 (defvar helm-slime--c-source-slime-apropos-symbol-current-external-package
   (helm-slime--apropos-source "SLIME apropos (current external package)"
                         (quote
@@ -227,27 +240,31 @@
                            nil
                            ,(or slime-buffer-package
                                 (slime-current-package))))))
+
 (defvar helm-slime--c-source-slime-apropos-symbol-all-external-package
-  (helm-slime--apropos-source "SLIME apropos (all external package)"
+  (helm-slime--apropos-source "SLIME apropos (all external packages)"
                         (quote
                          `(swank:apropos-list-for-emacs
                            ,helm-pattern
                            t
                            nil
                            nil))))
+
 (defvar helm-slime--c-source-slime-apropos-symbol-all-package
-  (helm-slime--apropos-source "SLIME apropos (all package)"
+  (helm-slime--apropos-source "SLIME apropos (all packages)"
                         (quote
                          `(swank:apropos-list-for-emacs
                            ,helm-pattern
                            nil
                            nil
                            nil))))
+
 (defvar helm-slime-apropos-sources
   '(helm-slime--c-source-slime-apropos-symbol-current-package
     helm-slime--c-source-slime-apropos-symbol-current-external-package
     helm-slime--c-source-slime-apropos-symbol-all-external-package
-    helm-slime--c-source-slime-apropos-symbol-all-package))
+    helm-slime--c-source-slime-apropos-symbol-all-package)
+  "List of Helm sources for `helm-slime-apropos'.")
 
 ;;;###autoload
 (defun helm-slime-apropos ()
@@ -257,6 +274,7 @@
         :buffer "*helm SLIME apropos*"))
 
 (defun helm-slime-repl-input-history-action (candidate)
+  "Default action for `helm-slime-repl-history'."
   (slime-repl-history-replace 'backward
                               (concat "^" (regexp-quote candidate) "$")))
 
