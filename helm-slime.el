@@ -4,7 +4,7 @@
 ;;               2012 Michael Markert <markert.michael@googlemail.com>
 ;;               2013 Thierry Volpiatto <thierry.volpiatto@gmail.com>
 ;;               2016 Syohei Yoshida <syohex@gmail.com>
-;;               2018 Pierre Neidhardt <mail@ambrevar.xyz>
+;;               2018, 2019 Pierre Neidhardt <mail@ambrevar.xyz>
 ;; Author: Takeshi Banse <takebi@laafc.net>
 ;; URL: https://github.com/emacs-helm/helm-slime
 ;; Version: 0.0.1
@@ -55,6 +55,7 @@
 ;;; Code:
 
 (require 'helm)
+(require 'helm-ring)
 (require 'slime)
 (require 'slime-c-p-c)
 (require 'slime-fuzzy)
@@ -260,28 +261,27 @@
   (helm :sources helm-slime-apropos-sources
         :buffer "*helm SLIME apropos*"))
 
-(defvar helm-slime--c-source-slime-repl-history
-  `((name . "SLIME repl history")
-    (candidates
-     . (lambda ()
-         (with-current-buffer helm-current-buffer
-           slime-repl-input-history)))
-    ;;(multiline)
-    (action
-     . (lambda (cand)
-         (slime-repl-history-replace 'backward
-                                     (concat "^" (regexp-quote cand) "$"))))))
+(defun helm-slime-repl-input-history-action (candidate)
+  (slime-repl-history-replace 'backward
+                              (concat "^" (regexp-quote candidate) "$")))
+
+(defvar helm-slime-source-repl-input-history
+  (helm-build-sync-source "REPL history"
+    :candidates (lambda ()
+                  (with-helm-current-buffer
+                    slime-repl-input-history))
+    :action 'helm-slime-repl-input-history-action
+    :multiline 'helm-kill-ring-max-offset)
+  "Source that provides Helm completion against `slime-repl-input-history'.")
 
 ;;;###autoload
 (defun helm-slime-repl-history ()
   "Select an input from the SLIME repl's history and insert it."
   (interactive)
-  (helm-slime--helm-complete helm-slime--c-source-slime-repl-history
-                       (helm-slime--symbol-position-funcall
-                        #'buffer-substring-no-properties
-                        (point)
-                        slime-repl-input-start-mark)
-                       nil nil t))
+  (when (derived-mode-p 'slime-repl-mode)
+    (helm :sources 'helm-slime-source-repl-input-history
+          :input (buffer-substring-no-properties (point) slime-repl-input-start-mark)
+          :buffer "*helm SLIME history*")))
 
 (defun helm-slime-init ()
   (run-hooks 'helm-slime-init-hook))
