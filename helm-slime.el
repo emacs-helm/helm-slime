@@ -283,8 +283,5 @@
           :input (buffer-substring-no-properties (point) slime-repl-input-start-mark)
           :buffer "*helm SLIME history*")))
 
-(defun helm-slime-init ()
-  (run-hooks 'helm-slime-init-hook))
-
 (provide 'helm-slime)
 ;;; helm-slime.el ends here
