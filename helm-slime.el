@@ -55,7 +55,6 @@
 ;;; Code:
 
 (require 'helm)
-(require 'helm-ring)
 (require 'slime)
 (require 'slime-c-p-c)
 (require 'slime-fuzzy)
@@ -278,13 +277,28 @@
   (slime-repl-history-replace 'backward
                               (concat "^" (regexp-quote candidate) "$")))
 
+(defgroup helm-slime nil
+  "SLIME for Helm."
+  :group 'helm)
+
+(defcustom helm-slime-history-max-offset 400
+  "Max number of chars displayed per candidate in `helm-slime-repl-history'.
+When `t', don't truncate candidate, show all.
+By default it is approximatively the number of bits contained in five lines
+of 80 chars each i.e 80*5.
+Note that if you set this to nil multiline will be disabled, i.e you
+will not have anymore separators between candidates."
+  :type '(choice (const :tag "Disabled" t)
+          (integer :tag "Max candidate offset"))
+  :group 'helm-slime)
+
 (defvar helm-slime-source-repl-input-history
   (helm-build-sync-source "REPL history"
     :candidates (lambda ()
                   (with-helm-current-buffer
                     slime-repl-input-history))
     :action 'helm-slime-repl-input-history-action
-    :multiline 'helm-kill-ring-max-offset)
+    :multiline 'helm-slime-history-max-offset)
   "Source that provides Helm completion against `slime-repl-input-history'.")
 
 ;;;###autoload
