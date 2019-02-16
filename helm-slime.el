@@ -174,6 +174,13 @@
                              (helm-slime--symbol-position-funcall
                               #'buffer-substring-no-properties)))
 
+(defvar helm-slime-connections-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map helm-map)
+    (define-key map (kbd "M-D") 'helm-slime-run-quit-connection)
+    map)
+  "Keymap for SLIME connection source in Helm.")
+
 (defun helm-slime-go-to-repl (_candidate)
   "Switched to marked REPL(s)."
   (helm-window-show-buffers
@@ -182,7 +189,14 @@
                       (slime-output-buffer)))))
 (put 'helm-slime-go-to-repl 'helm-only t)
 
-(defun helm-slime-quit-connections (_candidate)
+(defun helm-slime-run-quit-connection ()
+  "Run `helm-slime-quit-connections' action from `helm-slime--c-source-slime-connection'."
+  (interactive)
+  (with-helm-alive-p
+    (helm-exit-and-execute-action 'helm-slime-quit-connections)))
+(put 'helm-slime-run-quit-connection 'helm-only t)
+
+(defun helm-slime-quit-connections (&optional _candidate)
   "Kill marked REPL(s) and their inferior Lisps."
   (dolist (c (helm-marked-candidates))
     (let ((slime-dispatching-connection c))
@@ -221,7 +235,8 @@
 (defun helm-slime--c-source-slime-connection ()
   (helm-build-sync-source "SLIME connections"
     :candidates (helm-slime--connection-candidates)
-    :action helm-slime-connection-actions))
+    :action helm-slime-connection-actions
+    :keymap helm-slime-connections-map))
 
 ;;;###autoload
 (defun helm-slime-list-connections ()
