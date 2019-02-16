@@ -182,11 +182,18 @@
                       (slime-output-buffer)))))
 (put 'helm-slime-go-to-repl 'helm-only t)
 
+(defun helm-slime-quit-connections (_candidate)
+  "Kill marked REPL(s) and their inferior Lisps."
+  (dolist (c (helm-marked-candidates))
+    (let ((slime-dispatching-connection c))
+      (slime-repl-quit))))
+(put 'helm-slime-quit-connections 'helm-only t)
+
 (defcustom helm-slime-connection-actions
   '(("Go to REPL" . helm-slime-go-to-repl)
     ("Set default" . slime-select-connection)
     ("Restart" . slime-restart-connection-at-point)
-    ("Quit" . slime-quit-connection-at-point))
+    ("Quit" . helm-slime-quit-connections))
   "Actions for `helm-slime-list-connections`."
   :group 'helm-slime
   :type '(alist :key-type string :value-type function))
