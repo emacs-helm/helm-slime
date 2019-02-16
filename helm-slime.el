@@ -55,6 +55,7 @@
 ;;; Code:
 
 (require 'helm)
+(require 'helm-buffers)
 (require 'slime)
 (require 'slime-c-p-c)
 (require 'slime-fuzzy)
@@ -173,11 +174,16 @@
                              (helm-slime--symbol-position-funcall
                               #'buffer-substring-no-properties)))
 
+(defun helm-slime-go-to-repl (_candidate)
+  "Switched to marked REPL(s)."
+  (helm-window-show-buffers
+   (cl-loop for c in (helm-marked-candidates)
+            collect (let ((slime-dispatching-connection c))
+                      (slime-output-buffer)))))
+(put 'helm-slime-go-to-repl 'helm-only t)
+
 (defcustom helm-slime-connection-actions
-  '(("Go to REPL"
-     . (lambda (p)
-         (let ((slime-dispatching-connection p))
-           (switch-to-buffer (slime-output-buffer)))))
+  '(("Go to REPL" . helm-slime-go-to-repl)
     ("Set default" . slime-select-connection)
     ("Restart" . slime-restart-connection-at-point)
     ("Quit" . slime-quit-connection-at-point))
