@@ -173,36 +173,40 @@
                              (helm-slime--symbol-position-funcall
                               #'buffer-substring-no-properties)))
 
+(defcustom helm-slime-connection-actions
+  '(("Go to REPL"
+     . (lambda (p)
+         (let ((slime-dispatching-connection p))
+           (switch-to-buffer (slime-output-buffer)))))
+    ("Set default" . slime-select-connection)
+    ("Restart" . slime-restart-connection-at-point)
+    ("Quit" . slime-quit-connection-at-point))
+  "Actions for `helm-slime-list-connections`."
+  :group 'helm-slime
+  :type '(alist :key-type string :value-type function))
+
 (defvar helm-slime--c-source-slime-connection
-  '((name . "SLIME connections")
-    (candidates
-     . (lambda ()
-         (let ((fstring "%s%2s  %-10s  %-17s  %-7s %-s")
-               (collect (lambda (p)
-                          (cons
-                           (format fstring
-                                   (if (eq slime-default-connection p) "*" " ")
-                                   (slime-connection-number p)
-                                   (slime-connection-name p)
-                                   (or (process-id p) (process-contact p))
-                                   (slime-pid p)
-                                   (slime-lisp-implementation-type p))
-                           p))))
-           (mapcar collect (reverse slime-net-processes)))))
-    (action
-     . (("Go to REPL"
-         . (lambda (p)
-             (let ((slime-dispatching-connection p))
-               (switch-to-buffer (slime-output-buffer)))))
-        ("Set default" . slime-select-connection)
-        ("Restart" . slime-restart-connection-at-point)
-        ("Quit" . slime-quit-connection-at-point)))))
+  (helm-build-sync-source "SLIME connections"
+    :candidates (let* ((fstring "%s%2s  %-10s  %-17s  %-7s %-s")
+                       (collect (lambda (p)
+                                  (cons
+                                   (format fstring
+                                           (if (eq slime-default-connection p) "*" " ")
+                                           (slime-connection-number p)
+                                           (slime-connection-name p)
+                                           (or (process-id p) (process-contact p))
+                                           (slime-pid p)
+                                           (slime-lisp-implementation-type p))
+                                   p))))
+                  (mapcar collect (reverse slime-net-processes)))
+    :action helm-slime-connection-actions))
 
 ;;;###autoload
 (defun helm-slime-list-connections ()
   "Yet another `slime-list-connections' with `helm'."
   (interactive)
-  (helm 'helm-slime--c-source-slime-connection))
+  (helm :sources (list 'helm-slime--c-source-slime-connection)
+        :buffer "*helm-slime-list-connections*"))
 
 (defclass helm-slime-apropos-type (helm-source-sync)
   ((action :initform '(("Describe symbol" . slime-describe-symbol)
