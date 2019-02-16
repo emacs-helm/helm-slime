@@ -205,7 +205,7 @@
                      p))))
                   (mapcar collect (reverse slime-net-processes))))
 
-(defvar helm-slime--c-source-slime-connection
+(defun helm-slime--c-source-slime-connection ()
   (helm-build-sync-source "SLIME connections"
     :candidates (helm-slime--connection-candidates)
     :action helm-slime-connection-actions))
@@ -214,7 +214,7 @@
 (defun helm-slime-list-connections ()
   "Yet another `slime-list-connections' with `helm'."
   (interactive)
-  (helm :sources (list 'helm-slime--c-source-slime-connection)
+  (helm :sources (list (helm-slime--c-source-slime-connection))
         :buffer "*helm-slime-list-connections*"))
 
 (defclass helm-slime-apropos-type (helm-source-sync)
