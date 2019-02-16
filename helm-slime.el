@@ -189,10 +189,16 @@
       (slime-repl-quit))))
 (put 'helm-slime-quit-connections 'helm-only t)
 
+(defun helm-slime-restart-connections (_candidate)
+  "Restart marked REPLs' inferior Lisps."
+  (dolist (c (helm-marked-candidates))
+    (slime-restart-connection-at-point c)))
+(put 'helm-slime-restart-connections 'helm-only t)
+
 (defcustom helm-slime-connection-actions
   '(("Go to REPL" . helm-slime-go-to-repl)
     ("Set default" . slime-select-connection)
-    ("Restart" . slime-restart-connection-at-point)
+    ("Restart" . helm-slime-restart-connections)
     ("Quit" . helm-slime-quit-connections))
   "Actions for `helm-slime-list-connections`."
   :group 'helm-slime
