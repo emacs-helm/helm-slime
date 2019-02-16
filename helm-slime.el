@@ -178,6 +178,7 @@
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map helm-map)
     (define-key map (kbd "M-D") 'helm-slime-run-quit-connection)
+    (define-key map (kbd "M-R") 'helm-slime-run-rename-connection-buffer)
     map)
   "Keymap for SLIME connection source in Helm.")
 
@@ -209,10 +210,26 @@
     (slime-restart-connection-at-point c)))
 (put 'helm-slime-restart-connections 'helm-only t)
 
+(defun helm-slime-run-rename-connection-buffer ()
+  "Run `helm-slime-rename-connection-buffer' action from `helm-slime--c-source-slime-connection'."
+  (interactive)
+  (with-helm-alive-p
+    (helm-exit-and-execute-action 'helm-slime-rename-connection-buffer)))
+(put 'helm-slime-run-quit-connection 'helm-only t)
+
+(defun helm-slime-rename-connection-buffer (candidate)
+  "Rename REPL buffer."
+  (dolist (c (helm-marked-candidates))
+    (let ((slime-dispatching-connection c))
+      (with-current-buffer (slime-output-buffer)
+        (rename-buffer (helm-read-string "New name: " (buffer-name)))))))
+(put 'helm-slime-rename-connection-buffer 'helm-only t)
+
 (defcustom helm-slime-connection-actions
   '(("Go to REPL" . helm-slime-go-to-repl)
     ("Set default" . slime-select-connection)
     ("Restart" . helm-slime-restart-connections)
+    ("Rename REPL buffer" . helm-slime-rename-connection-buffer)
     ("Quit" . helm-slime-quit-connections))
   "Actions for `helm-slime-list-connections`."
   :group 'helm-slime
