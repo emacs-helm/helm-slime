@@ -185,20 +185,23 @@
   :group 'helm-slime
   :type '(alist :key-type string :value-type function))
 
+(defun helm-slime--connection-candidates ()
+  (let* ((fstring "%s%2s  %-10s  %-17s  %-7s %-s")
+         (collect (lambda (p)
+                    (cons
+                     (format fstring
+                             (if (eq slime-default-connection p) "*" " ")
+                             (slime-connection-number p)
+                             (slime-connection-name p)
+                             (or (process-id p) (process-contact p))
+                             (slime-pid p)
+                             (slime-lisp-implementation-type p))
+                     p))))
+                  (mapcar collect (reverse slime-net-processes))))
+
 (defvar helm-slime--c-source-slime-connection
   (helm-build-sync-source "SLIME connections"
-    :candidates (let* ((fstring "%s%2s  %-10s  %-17s  %-7s %-s")
-                       (collect (lambda (p)
-                                  (cons
-                                   (format fstring
-                                           (if (eq slime-default-connection p) "*" " ")
-                                           (slime-connection-number p)
-                                           (slime-connection-name p)
-                                           (or (process-id p) (process-contact p))
-                                           (slime-pid p)
-                                           (slime-lisp-implementation-type p))
-                                   p))))
-                  (mapcar collect (reverse slime-net-processes)))
+    :candidates (helm-slime--connection-candidates)
     :action helm-slime-connection-actions))
 
 ;;;###autoload
