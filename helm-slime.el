@@ -219,7 +219,7 @@
   :type '(alist :key-type string :value-type function))
 
 (defun helm-slime--connection-candidates ()
-  (let* ((fstring "%s%2s  %-10s  %-17s  %-7s %-s")
+  (let* ((fstring "%s%2s  %-10s  %-17s  %-7s %-s %s")
          (collect (lambda (p)
                     (cons
                      (format fstring
@@ -228,7 +228,8 @@
                              (slime-connection-name p)
                              (or (process-id p) (process-contact p))
                              (slime-pid p)
-                             (slime-lisp-implementation-type p))
+                             (slime-lisp-implementation-type p)
+                             (slime-connection-output-buffer p))
                      p))))
                   (mapcar collect (reverse slime-net-processes))))
 
