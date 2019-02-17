@@ -231,7 +231,7 @@
     (helm-exit-and-execute-action 'helm-slime-rename-connection-buffer)))
 (put 'helm-slime-run-quit-connection 'helm-only t)
 
-(defun helm-slime-rename-connection-buffer (candidate)
+(defun helm-slime-rename-connection-buffer (_candidate)
   "Rename REPL buffer."
   (dolist (c (helm-marked-candidates))
     (let ((slime-dispatching-connection c))
