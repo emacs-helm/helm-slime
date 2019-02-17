@@ -281,6 +281,39 @@
   (helm :sources (list (helm-slime--c-source-slime-connection))
         :buffer "*helm-slime-list-connections*"))
 
+(defun helm-slime--buffer-candidates ()
+  "Collect SLIME related buffers, like the `events' buffer.
+If the buffer does not exist, we use the associated function to generate it.
+
+The list is in the (DISPLAY . REAL) form.  Because Helm seems to
+require that REAL be a string, we need to (funcall (intern
+\"function\")) in `helm-slime-switch-buffers' to generate the
+buffer."
+  (list (cons slime-event-buffer-name "slime-events-buffer")
+        (cons slime-threads-buffer-name "slime-list-threads")
+        (cons (slime-buffer-name :scratch) "slime-scratch-buffer")))
+
+(defun helm-slime-switch-buffers (_candidate)
+  "Switch to buffer candidates and replace current buffer.
+
+If more than one buffer marked switch to these buffers in separate windows.
+If a prefix arg is given split windows vertically."
+  (helm-window-show-buffers
+   (cl-loop for b in (helm-marked-candidates)
+            collect (funcall (intern b)))))
+
+(defun helm-slime-build-buffers-source ()
+  (helm-build-sync-source "SLIME buffers"
+    :candidates (helm-slime--buffer-candidates)
+    :action `(("Switch to buffer(s)" . helm-slime-switch-buffers))))
+
+(defun helm-slime-mini ()
+  "Helm for SLIME connections and buffers."
+  (interactive)
+  (helm :sources (list (helm-slime--c-source-slime-connection)
+                       (helm-slime-build-buffers-source))
+        :buffer "*helm-slime-mini*"))
+
 (defclass helm-slime-apropos-type (helm-source-sync)
   ((action :initform '(("Describe symbol" . slime-describe-symbol)
                        ("Edit definition" . slime-edit-definition)))

@@ -25,3 +25,6 @@ Helm-SLIME defines a few new commands:
 
 - helm-slime-repl-history :: Select an input from the SLIME REPL history and
      insert it.
+
+- helm-slime-mini :: Like ~helm-slime-list-connections~, but include an extra
+     source of SLIME-related buffers, like the events buffer or the scratch buffer.
