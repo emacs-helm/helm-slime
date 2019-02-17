@@ -190,6 +190,13 @@
                       (slime-output-buffer)))))
 (put 'helm-slime-go-to-repl 'helm-only t)
 
+(defun helm-slime-go-to-inferior (_candidate)
+  "Switched to inferior Lisps associated with the marked connections."
+  (helm-window-show-buffers
+   (cl-loop for c in (helm-marked-candidates)
+            collect (process-buffer (slime-process c)))))
+(put 'helm-slime-go-to-inferior 'helm-only t)
+
 (defun helm-slime-run-quit-connection ()
   "Run `helm-slime-quit-connections' action from `helm-slime--c-source-slime-connection'."
   (interactive)
@@ -232,7 +239,8 @@
     (,(substitute-command-keys "Rename REPL buffer \\<helm-slime-connections-map>`\\[helm-slime-run-rename-connection-buffer]'")
      . helm-slime-rename-connection-buffer)
     (,(substitute-command-keys "Quit \\<helm-slime-connections-map>`\\[helm-slime-run-quit-connection]'")
-     . helm-slime-quit-connections))
+     . helm-slime-quit-connections)
+    ("Go to inferior Lisp" . helm-slime-go-to-inferior))
   "Actions for `helm-slime-list-connections`."
   :group 'helm-slime
   :type '(alist :key-type string :value-type function))
