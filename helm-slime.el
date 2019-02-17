@@ -197,6 +197,13 @@
             collect (process-buffer (slime-process c)))))
 (put 'helm-slime-go-to-inferior 'helm-only t)
 
+(defun helm-slime-go-to-sldb (_candidate)
+  "Switched to sldb buffers associated with the marked connections."
+  (helm-window-show-buffers
+   (cl-loop for c in (helm-marked-candidates)
+            append (sldb-buffers c))))
+(put 'helm-slime-go-to-sldb 'helm-only t)
+
 (defun helm-slime-run-quit-connection ()
   "Run `helm-slime-quit-connections' action from `helm-slime--c-source-slime-connection'."
   (interactive)
@@ -240,7 +247,8 @@
      . helm-slime-rename-connection-buffer)
     (,(substitute-command-keys "Quit \\<helm-slime-connections-map>`\\[helm-slime-run-quit-connection]'")
      . helm-slime-quit-connections)
-    ("Go to inferior Lisp" . helm-slime-go-to-inferior))
+    ("Go to inferior Lisp" . helm-slime-go-to-inferior)
+    ("Go to sldb buffers" . helm-slime-go-to-sldb))
   "Actions for `helm-slime-list-connections`."
   :group 'helm-slime
   :type '(alist :key-type string :value-type function))
