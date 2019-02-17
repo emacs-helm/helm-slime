@@ -226,11 +226,13 @@
 (put 'helm-slime-rename-connection-buffer 'helm-only t)
 
 (defcustom helm-slime-connection-actions
-  '(("Go to REPL" . helm-slime-go-to-repl)
+  `(("Go to REPL" . helm-slime-go-to-repl)
     ("Set default" . slime-select-connection)
     ("Restart" . helm-slime-restart-connections)
-    ("Rename REPL buffer" . helm-slime-rename-connection-buffer)
-    ("Quit" . helm-slime-quit-connections))
+    (,(substitute-command-keys "Rename REPL buffer \\<helm-slime-connections-map>`\\[helm-slime-run-rename-connection-buffer]'")
+     . helm-slime-rename-connection-buffer)
+    (,(substitute-command-keys "Quit \\<helm-slime-connections-map>`\\[helm-slime-run-quit-connection]'")
+     . helm-slime-quit-connections))
   "Actions for `helm-slime-list-connections`."
   :group 'helm-slime
   :type '(alist :key-type string :value-type function))
