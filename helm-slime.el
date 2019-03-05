@@ -307,10 +307,37 @@ If a prefix arg is given split windows vertically."
     :candidates (helm-slime--buffer-candidates)
     :action `(("Switch to buffer(s)" . helm-slime-switch-buffers))))
 
+(defun helm-slime-new-repl (name)
+  "Fetch URL and render the page in a new buffer.
+If the input doesn't look like an URL or a domain name, the
+word(s) will be searched for via `eww-search-prefix'."
+  ;; TODO: Set REPL buffer name to *slime-repl NAME*.
+  ;; The following does not work.
+  ;; (rename-buffer (format "*slime-repl %s*" name))
+  (cl-flet ((slime-repl-buffer (&optional create connection)
+                               (funcall (if create #'get-buffer-create #'get-buffer)
+                                        (format "*slime-repl %s*" ;; (slime-connection-name connection)
+                                                name))))
+    (slime)))
+
+(defun helm-slime-new-repl-choose-lisp (name)
+  "Fetch URL and render the page in a new buffer.
+If the input doesn't look like an URL or a domain name, the
+word(s) will be searched for via `eww-search-prefix'."
+  (let ((current-prefix-arg '-))
+    (helm-slime-new-repl name)))
+
+(defvar helm-slime-new
+  (helm-build-dummy-source "Open new REPL"
+    :action (helm-make-actions
+             "Open new REPL" 'helm-slime-new-repl
+             "Open new REPL with chosen Lisp" 'helm-slime-new-repl-choose-lisp)))
+
 (defun helm-slime-mini ()
   "Helm for SLIME connections and buffers."
   (interactive)
   (helm :sources (list (helm-slime--c-source-slime-connection)
+                       helm-slime-new
                        (helm-slime-build-buffers-source))
         :buffer "*helm-slime-mini*"))
 
