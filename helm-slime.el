@@ -314,7 +314,7 @@ word(s) will be searched for via `eww-search-prefix'."
   ;; TODO: Set REPL buffer name to *slime-repl NAME*.
   ;; The following does not work.
   ;; (rename-buffer (format "*slime-repl %s*" name))
-  (cl-flet ((slime-repl-buffer (&optional create connection)
+  (cl-flet ((slime-repl-buffer (&optional create _connection)
                                (funcall (if create #'get-buffer-create #'get-buffer)
                                         (format "*slime-repl %s*" ;; (slime-connection-name connection)
                                                 name))))
