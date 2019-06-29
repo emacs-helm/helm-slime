@@ -172,7 +172,8 @@
   (interactive)
   (helm-slime--helm-complete helm-slime-complete-sources
                              (helm-slime--symbol-position-funcall
-                              #'buffer-substring-no-properties)))
+                              #'buffer-substring-no-properties)
+                             nil nil t))
 
 (defvar helm-slime-connections-map
   (let ((map (make-sparse-keymap)))
