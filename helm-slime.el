@@ -146,7 +146,8 @@
 
 (defvar helm-slime-fuzzy-complete-source
   (helm-make-source "SLIME fuzzy complete" 'helm-slime-complete-type
-    :init #'helm-slime--asc-fuzzy-init))
+    :init #'helm-slime--asc-fuzzy-init
+    :fuzzy-match t))
 
 (defvar helm-slime-complete-sources
   '(helm-slime-simple-complete-source
