@@ -9,7 +9,7 @@
 ;; URL: https://github.com/emacs-helm/helm-slime
 ;; Version: 0.3.0
 ;; Keywords: convenience, helm, slime
-;; Package-Requires: ((emacs "24") (helm-core "1.9.8") (slime "2.18") (cl-lib "0.5"))
+;; Package-Requires: ((emacs "24") (helm "3.2") (slime "2.18") (cl-lib "0.5"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
