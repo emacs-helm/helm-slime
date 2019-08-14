@@ -13,6 +13,8 @@ Helm for [[https://github.com/slime/slime][SLIME]], the Superior Lisp Interactio
 
   or simply ~(require 'helm-slime)~ in some appropriate manner.
 
+To use Helm instead of the Xref buffer, enable ~global-helm-slime-mode~.
+
 * Usage
 
 Helm-SLIME defines a few new commands:
