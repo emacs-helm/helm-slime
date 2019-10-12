@@ -34,11 +34,14 @@
 ;;
 ;;  `helm-lisp-list-connections'
 ;;    Yet another Lisp connection list with `helm'.
-;;  `helm-slime-apropos'
+;;  `helm-lisp-mini'
+;;    Like `helm-lisp-list-connections' with extra buffers, like the scratch
+;;    buffer and the threads listing.
+;;  `helm-lisp-apropos'
 ;;    Yet another `slime-apropos' with `helm'.
-;;  `helm-slime-repl-history'
+;;  `helm-lisp-repl-history'
 ;;    Select an input from the SLIME repl's history and insert it.
-;;    Sly can use `helm-comint-input-ring' instead.
+;;    Sly can either use this function or directly `helm-comint-input-ring'.
 
 ;;; Installation:
 ;;
@@ -55,7 +58,8 @@
 ;; To use Helm instead of the Xref buffer, enable `global-helm-slime-mode'.
 ;;
 ;; To enable Helm for completion, install `helm-company'
-;; (https://github.com/Sodel-the-Vociferous/helm-company) then:
+;; (https://github.com/Sodel-the-Vociferous/helm-company).  With SLIME, you'll
+;; also need `slime-company' (https://github.com/anwyn/slime-company/).  Then:
 ;;
 ;; - SLIME:
 ;;  (slime-setup '(slime-company))
@@ -304,7 +308,7 @@ See `sly-mrepl--find-buffer'."
   "List Lisp connections with Helm."
   (interactive)
   (helm :sources (list (helm-lisp--c-source-connection))
-        :buffer "*helm-slime-list-connections*"))
+        :buffer "*helm-lisp-list-connections*"))
 
 (defun helm-lisp--buffer-candidates ()
   "Collect Lisp-related buffers, like the `events' buffer.
@@ -501,17 +505,17 @@ word(s) will be searched for via `eww-search-prefix'."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-(defun helm-slime-repl-input-history-action (candidate)
-  "Default action for `helm-slime-repl-history'."
+(defun helm-lisp-repl-input-history-action (candidate)
+  "Default action for `helm-lisp-repl-history'."
   (slime-repl-history-replace 'backward
                               (concat "^" (regexp-quote candidate) "$")))
 
-(defgroup helm-slime nil
+(defgroup helm-lisp nil
   "SLIME for Helm."
   :group 'helm)
 
-(defcustom helm-slime-history-max-offset 400
-  "Max number of chars displayed per candidate in `helm-slime-repl-history'.
+(defcustom helm-lisp-history-max-offset 400
+  "Max number of chars displayed per candidate in `helm-lisp-repl-history'.
 When `t', don't truncate candidate, show all.
 By default it is approximatively the number of bits contained in five lines
 of 80 chars each i.e 80*5.
@@ -519,25 +523,27 @@ Note that if you set this to nil multiline will be disabled, i.e you
 will not have anymore separators between candidates."
   :type '(choice (const :tag "Disabled" t)
           (integer :tag "Max candidate offset"))
-  :group 'helm-slime)
+  :group 'helm-lisp)
 
-(defvar helm-slime-source-repl-input-history
+(defvar helm-lisp-source-repl-input-history
   (helm-build-sync-source "REPL history"
     :candidates (lambda ()
                   (with-helm-current-buffer
                     slime-repl-input-history))
-    :action 'helm-slime-repl-input-history-action
-    :multiline 'helm-slime-history-max-offset)
+    :action 'helm-lisp-repl-input-history-action
+    :multiline 'helm-lisp-history-max-offset)
   "Source that provides Helm completion against `slime-repl-input-history'.")
 
 ;;;###autoload
-(defun helm-slime-repl-history ()
-  "Select an input from the SLIME repl's history and insert it."
+(defun helm-lisp-repl-history ()
+  "Select an input from the REPL's history and insert it."
   (interactive)
-  (when (derived-mode-p 'slime-repl-mode)
-    (helm :sources 'helm-slime-source-repl-input-history
-          :input (buffer-substring-no-properties (point) slime-repl-input-start-mark)
-          :buffer "*helm SLIME history*")))
+  (if (helm-lisp-sly-p)
+      (helm-comint-input-ring)
+    (when (derived-mode-p 'slime-repl-mode)
+      (helm :sources 'helm-lisp-source-repl-input-history
+            :input (buffer-substring-no-properties (point) slime-repl-input-start-mark)
+            :buffer "*helm SLIME history*"))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
