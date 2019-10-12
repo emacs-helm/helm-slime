@@ -32,14 +32,13 @@
 ;;
 ;; The complete command list:
 ;;
-;;  `helm-slime-complete'
-;;    Select a symbol from the SLIME completion systems.
 ;;  `helm-lisp-list-connections'
 ;;    Yet another Lisp connection list with `helm'.
 ;;  `helm-slime-apropos'
 ;;    Yet another `slime-apropos' with `helm'.
 ;;  `helm-slime-repl-history'
 ;;    Select an input from the SLIME repl's history and insert it.
+;;    Sly can use `helm-comint-input-ring' instead.
 
 ;;; Installation:
 ;;
@@ -54,6 +53,19 @@
 ;; or simply require helm-slime in some appropriate manner.
 ;;
 ;; To use Helm instead of the Xref buffer, enable `global-helm-slime-mode'.
+;;
+;; To enable Helm for completion, install `helm-company'
+;; (https://github.com/Sodel-the-Vociferous/helm-company) then:
+;;
+;; - SLIME:
+;;  (slime-setup '(slime-company))
+;;  (require 'helm-company)
+;;  (define-key slime-repl-mode-map (kbd "<tab>") 'helm-company)
+;;
+;; - Sly:
+;;  (add-hook 'sly-mrepl-hook #'company-mode)
+;;  (require 'helm-company)
+;;  (define-key sly-mrepl-mode-map (kbd "<tab>") 'helm-company)
 
 ;;; Code:
 
@@ -68,122 +80,6 @@
 
 (defun helm-lisp-sly-p ()
   (require 'sly nil 'noerror))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defvar helm-slime--complete-target "")
-
-(defun helm-slime--insert (candidate)
-  "Default action for `helm-slime-complete-type'."
-  (let ((pt (point)))
-    (when (and (search-backward helm-slime--complete-target nil t)
-               (string= (buffer-substring (point) pt) helm-slime--complete-target))
-      (delete-region (point) pt)))
-  (insert candidate))
-
-(cl-defun helm-slime--symbol-position-funcall
-    (f &optional (end-pt (point)) (beg-pt (slime-symbol-start-pos)))
-  (let* ((end (move-marker (make-marker) end-pt))
-         (beg (move-marker (make-marker) beg-pt)))
-    (unwind-protect
-        (funcall f beg end)
-      (set-marker end nil)
-      (set-marker beg nil))))
-
-(defclass helm-slime-complete-type (helm-source-in-buffer)
-  ((action :initform '(("Insert" . helm-slime--insert)
-                       ("Describe symbol" . slime-describe-symbol)
-                       ("Edit definition" . slime-edit-definition)))
-   (persistent-action :initform #'slime-describe-symbol)
-   (volatile :initform t)
-   (get-line :initform #'buffer-substring))
-  "SLIME complete.")
-
-(defun helm-slime--asc-init-candidates-buffer-base (complete-fn insert-fn)
-  (let ((put-text-property1 (lambda (s)
-                              (put-text-property (point-at-bol 0)
-                                                 (point-at-eol 0)
-                                                 'helm-realvalue
-                                                 s))))
-    (let* ((completion-result (with-current-buffer helm-current-buffer
-                                (funcall complete-fn)))
-           (completions (if (listp (cl-first completion-result))
-                            (cl-first completion-result)
-                          completion-result))
-           (base  (slime-symbol-at-point)))
-      (with-current-buffer (helm-candidate-buffer 'global)
-        (funcall insert-fn completions base put-text-property1)))))
-
-(defun helm-slime--asc-init-candidates-buffer-basic-insert-function (completions base put-text-property1)
-  (let ((len (length base)))
-    (dolist (c completions)
-      (let ((start (point)))
-        (insert c)
-        (put-text-property start (+ start len) 'face 'bold)
-        (insert "\n")
-        (funcall put-text-property1 c)))))
-
-(defun helm-slime--asc-simple-init ()
-  (helm-slime--asc-init-candidates-buffer-base
-   (slime-curry 'slime-simple-completions helm-slime--complete-target)
-   'helm-slime--asc-init-candidates-buffer-basic-insert-function))
-
-(defun helm-slime--asc-compound-init ()
-  (helm-slime--asc-init-candidates-buffer-base
-   (slime-curry 'helm-slime--symbol-position-funcall 'slime-contextual-completions)
-   'helm-slime--asc-init-candidates-buffer-basic-insert-function))
-
-(cl-defun helm-slime--asc-fuzzy-init (&optional
-                                (insert-choice-fn
-                                 'slime-fuzzy-insert-completion-choice))
-  (helm-slime--asc-init-candidates-buffer-base
-   (slime-curry 'slime-fuzzy-completions helm-slime--complete-target)
-   (lambda (completions _ put-text-property1)
-     (with-current-buffer (helm-candidate-buffer 'global)
-       (let ((max-len (cl-loop for (x _) in completions maximize (length x))))
-         (dolist (c completions)
-           (funcall insert-choice-fn c max-len)
-           (funcall put-text-property1 (car c))))))))
-
-(defvar helm-slime-simple-complete-source
-  (helm-make-source "SLIME simple complete" 'helm-slime-complete-type
-    :init #'helm-slime--asc-simple-init))
-
-(defvar helm-slime-compound-complete-source
-  (helm-make-source "SLIME compound complete" 'helm-slime-complete-type
-    :init #'helm-slime--asc-compound-init))
-
-(defvar helm-slime-fuzzy-complete-source
-  (helm-make-source "SLIME fuzzy complete" 'helm-slime-complete-type
-    :init #'helm-slime--asc-fuzzy-init
-    :fuzzy-match t))
-
-(defvar helm-slime-complete-sources
-  '(helm-slime-simple-complete-source
-    helm-slime-fuzzy-complete-source
-    helm-slime-compound-complete-source)
-  "List of Helm sources used for completion.")
-
-(defun helm-slime--helm-complete (sources target &optional limit input-idle-delay target-is-default-input-p)
-  "Run Helm for completion."
-  (let ((helm-candidate-number-limit (or limit helm-candidate-number-limit))
-        (helm-input-idle-delay (or input-idle-delay helm-input-idle-delay))
-        (helm-execute-action-at-once-if-one t)
-        (helm-slime--complete-target target)
-        (enable-recursive-minibuffers t)
-        helm-full-frame)
-    (helm :sources sources
-          :input (if target-is-default-input-p target nil)
-          :buffer "*helm complete*")))
-
-;;;###autoload
-(defun helm-slime-complete ()
-  "Select a symbol from the SLIME completion systems."
-  (interactive)
-  (helm-slime--helm-complete helm-slime-complete-sources
-                             (helm-slime--symbol-position-funcall
-                              #'buffer-substring-no-properties)
-                             nil nil t))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
