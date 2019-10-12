@@ -547,14 +547,17 @@ will not have anymore separators between candidates."
 
 ;;;###autoload
 (defun helm-lisp-repl-history ()
-  "Select an input from the REPL's history and insert it."
+  "Select an input from the REPL's history and insert it.
+MREPL use the buffer local history as per comint mode.
+SLIME REPL uses its own global history."
   (interactive)
-  (if (helm-lisp-sly-p)
+  (if (or (helm-lisp-sly-p)
+          (derived-mode-p 'slime-mrepl-mode))
       (helm-comint-input-ring)
     (when (derived-mode-p 'slime-repl-mode)
       (helm :sources 'helm-lisp-source-repl-input-history
             :input (buffer-substring-no-properties (point) slime-repl-input-start-mark)
-            :buffer "*helm SLIME history*"))))
+            :buffer "*helm lisp repl history*"))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
