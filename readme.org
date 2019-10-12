@@ -47,3 +47,11 @@ Helm-SLIME defines a few new commands:
 - helm-lisp-mini :: Like ~helm-lisp-list-connections~, but include an extra
                     source of Lisp-related buffers, like the events buffer or
                     the scratch buffer.
+
+* Changelog
+
+** 0.5
+
+- Add support for Sly.
+- Move from the =helm-slime= prefix to the =helm-lisp= prefix.
+- Remove the =helm-slime-complete= function in favour of =helm-company=.
