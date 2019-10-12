@@ -83,6 +83,7 @@
 (require 'cl-lib)
 
 (defun helm-lisp-sly-p ()
+  "Return non-nil if Sly is active."
   (require 'sly nil 'noerror))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -110,7 +111,10 @@
              (let ((buffer (nth 1 candidate))
                    (connection (nth 0 candidate)))
                (unless buffer
-                 (sly-mrepl-new connection)) ; TODO: Add SLIME support.
+                 (if (helm-lisp-sly-p)
+                     (sly-mrepl-new connection)
+                   (let ((slime-dispatching-connection connection))
+                     (slime-new-mrepl))))
                buffer))
            (helm-marked-candidates))))
 (put 'helm-lisp-go-to-repl 'helm-only t)
@@ -266,23 +270,27 @@ The REAL-VALUE is (P BUFFER)."
      (list p buffer))))
 
 (defun helm-lisp--repl-buffers (&optional connection thread)
+  ;; Inspired by `sly-mrepl--find-buffer'.
   (cl-remove-if-not
    (lambda (x)
      (with-current-buffer x
-       (and (eq major-mode (or 'sly-mrepl-mode 'slime-mrepl-mode))
+       (and (memq major-mode '(sly-mrepl-mode
+                               slime-repl-mode
+                               slime-mrepl-mode))
             (or (not connection)
                 (eq (if (helm-lisp-sly-p)
                         sly-buffer-connection
                       slime-buffer-connection)
                     connection))
             (or (not thread)
-                (eq thread sly-current-thread)))))
+                (eq thread (if (boundp 'sly-current-thread)
+                               sly-current-thread
+                             slime-current-thread))))))
    (buffer-list)))
 
 (defun helm-lisp--repl-buffer-candidates ()
   "Return buffer/connection candidates.
-It returns all REPL buffer candidates + connections without buffers.
-See `sly-mrepl--find-buffer'."
+It returns all REPL buffer candidates + connections without buffers."
   (let* ((repl-buffers (helm-lisp--repl-buffers))
          (buffer-connections (cl-delete-duplicates
                               (mapcar #'helm-lisp-buffer-connection
@@ -345,15 +353,18 @@ If a prefix arg is given split windows vertically."
 
 (defun helm-lisp-new-repl (name)
   (if (helm-lisp-sly-p)
-      (sly-mrepl-new (sly-current-connection) name)                   ; TODO: Set new connection?
-      (cl-flet ((slime-repl-buffer (&optional create _connection)
-                                   (funcall (if create #'get-buffer-create #'get-buffer)
-                                            (format "*slime-repl %s*" ;; (slime-connection-name connection)
-                                                    name))))
-        ;; TODO: Set REPL buffer name to *slime-repl NAME*.
-        ;; The following does not work.
-        ;; (rename-buffer (format "*slime-repl %s*" name))
-        (slime))))
+      ;; TODO: Set new Sly connection?
+      (sly-mrepl-new (sly-current-connection) name)
+    (cl-flet ((slime-repl-buffer (&optional create _connection)
+                                 (funcall (if create #'get-buffer-create #'get-buffer)
+                                          (format "*slime-repl %s*" ;; (slime-connection-name connection)
+                                                  name))))
+      ;; TODO: Set REPL buffer name to *slime-repl NAME*.
+      ;; The following does not work.
+      ;; (rename-buffer (format "*slime-repl %s*" name))
+      (if (fboundp 'slime-new-mrepl)
+          (slime-new-mrepl)
+        (slime)))))
 
 (defun helm-lisp-new-repl-choose-lisp (name)
   "Fetch URL and render the page in a new buffer.
