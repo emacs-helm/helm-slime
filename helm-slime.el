@@ -392,20 +392,10 @@ word(s) will be searched for via `eww-search-prefix'."
 
 (defclass helm-lisp-apropos-type (helm-source-sync)
   ((action :initform `(("Describe SYMBOL" . ,(if (helm-lisp-sly-p)
-                                                 (lambda (c)
-                                                   (let ((name+package+external (car c)))
-                                                     (sly-describe-symbol
-                                                      (format "%s:%s"
-                                                              (second name+package+external)
-                                                              (first name+package+external)))))
+                                                 'sly-describe-symbol
                                                'slime-describe-symbol))
                        ("Edit definition" . ,(if (helm-lisp-sly-p)
-                                                 (lambda (c)
-                                                   (let ((name+package+external (car c)))
-                                                     (sly-edit-definition
-                                                      (format "%s:%s"
-                                                              (second name+package+external)
-                                                              (first name+package+external)))))
+                                                 'sly-edit-definition
                                                'slime-edit-definition))))
    (persistent-action :initform (if (helm-lisp-sly-p)
                                     #'sly-describe-symbol
@@ -414,33 +404,32 @@ word(s) will be searched for via `eww-search-prefix'."
    (requires-pattern :initform 2))
   "Lisp apropos.")
 
+(defun helm-lisp--format-designator (designator)
+  (if (helm-lisp-sly-p)
+      (let ((package (cadr designator))
+            (name (car designator)))
+        (format "%s:%s" package name))
+      designator))
+
 (defun helm-lisp--apropos-source (name external-only case-sensitive current-package)
   "Build source that provides Helm completion against `apropos'."
   (helm-make-source name 'helm-lisp-apropos-type
     :candidates `(lambda ()
                    (with-current-buffer helm-current-buffer
                      (cl-loop for plist in (if (helm-lisp-sly-p)
-                                               (sly-eval '(list 'slynk-apropos:apropos-list-for-emacs
-                                                                helm-pattern
-                                                                ,(not (null external-only))
-                                                                ,(not (null case-sensitive))
-                                                                (when ,current-package
-                                                                  (helm-lisp-current-package))
-                                                                ,package))
+                                               (sly-eval (list 'slynk-apropos:apropos-list-for-emacs
+                                                               helm-pattern
+                                                               ,(not (null external-only))
+                                                               ,(not (null case-sensitive))
+                                                               (when ,current-package
+                                                                 (helm-lisp-current-package))))
                                              (slime-eval (list 'swank:apropos-list-for-emacs
                                                                helm-pattern
                                                                ,(not (null external-only))
                                                                ,(not (null case-sensitive))
                                                                (when ,current-package
                                                                  (helm-lisp-current-package)))))
-                              ;; SLY
-                              ;; for designator = (plist-get plist :designator)
-                              ;; for package = (cadr designator)
-                              ;; for name = (car designator)
-                              ;; collect (list  (format "%s (%s)" name package)
-                              ;;                designator)
-                              ;; SLIME
-                              collect (plist-get plist :designator))))))
+                              collect (helm-lisp--format-designator (plist-get plist :designator)))))))
 
 (defun helm-lisp-current-package ()
   (if (helm-lisp-sly-p)
