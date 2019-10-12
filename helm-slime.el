@@ -34,18 +34,18 @@
 ;;
 ;;  `helm-lisp-list-connections'
 ;;    Yet another Lisp connection list with `helm'.
-;;  `helm-lisp-mini'
-;;    Like `helm-lisp-list-connections' with extra buffers, like the scratch
-;;    buffer and the threads listing.
 ;;  `helm-lisp-apropos'
 ;;    Yet another `slime-apropos' with `helm'.
 ;;  `helm-lisp-repl-history'
 ;;    Select an input from the SLIME repl's history and insert it.
 ;;    Sly can either use this function or directly `helm-comint-input-ring'.
+;;  `helm-lisp-mini'
+;;    Like ~helm-lisp-list-connections~, but include an extra source of
+;;    Lisp-related buffers, like the events buffer or the scratch buffer.
 
 ;;; Installation:
 ;;
-;; Put the helm-slime.el, helm.el to your load-path.
+;; Add helm-slime.el to your load-path.
 ;; Set up SLIME or Sly properly.
 ;;
 ;; If you use SLIME, call `slime-setup' and include 'helm-slime as the
