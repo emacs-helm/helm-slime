@@ -414,90 +414,68 @@ word(s) will be searched for via `eww-search-prefix'."
    (requires-pattern :initform 2))
   "Lisp apropos.")
 
-(defun helm-lisp--apropos-source (name expressions)
+(defun helm-lisp--apropos-source (name external-only case-sensitive current-package)
   "Build source that provides Helm completion against `apropos'."
   (helm-make-source name 'helm-lisp-apropos-type
     :candidates `(lambda ()
                    (with-current-buffer helm-current-buffer
                      (cl-loop for plist in (if (helm-lisp-sly-p)
-                                               (sly-eval ,expressions)
-                                             (slime-eval ,expressions))
-                              for designator = (plist-get plist :designator)
-                              for package = (cadr designator)
-                              for name = (car designator)
-                              collect (list (format "%s (%s)" name package) designator))))))
+                                               (sly-eval '(list 'slynk-apropos:apropos-list-for-emacs
+                                                                helm-pattern
+                                                                ,(not (null external-only))
+                                                                ,(not (null case-sensitive))
+                                                                (when ,current-package
+                                                                  (helm-lisp-current-package))
+                                                                ,package))
+                                             (slime-eval (list 'swank:apropos-list-for-emacs
+                                                               helm-pattern
+                                                               ,(not (null external-only))
+                                                               ,(not (null case-sensitive))
+                                                               (when ,current-package
+                                                                 (helm-lisp-current-package)))))
+                              ;; SLY
+                              ;; for designator = (plist-get plist :designator)
+                              ;; for package = (cadr designator)
+                              ;; for name = (car designator)
+                              ;; collect (list  (format "%s (%s)" name package)
+                              ;;                designator)
+                              ;; SLIME
+                              collect (plist-get plist :designator))))))
+
+(defun helm-lisp-current-package ()
+  (if (helm-lisp-sly-p)
+      (or sly-buffer-package
+          (sly-current-package))
+    (or slime-buffer-package
+        (slime-current-package))))
 
 (defvar helm-lisp--c-source-apropos-symbol-current-package
   (helm-lisp--apropos-source
    "Apropos (current package)"
-   (if (helm-lisp-sly-p)
-       (quote
-        `(slynk-apropos:apropos-list-for-emacs
-          ,helm-pattern
-          nil
-          nil
-          ,(or sly-buffer-package
-               (sly-current-package))))
-     (quote
-      `(swank:apropos-list-for-emacs
-        ,helm-pattern
-        nil
-        nil
-        ,(or slime-buffer-package
-             (slime-current-package)))))))
+   nil
+   nil
+   (helm-lisp-current-package)))
 
 (defvar helm-lisp--c-source-apropos-symbol-current-external-package
   (helm-lisp--apropos-source
    "Apropos (current external package)"
-   (if (helm-lisp-sly-p)
-       (quote
-        `(slynk-apropos:apropos-list-for-emacs
-          ,helm-pattern
-          t
-          nil
-          ,(or sly-buffer-package
-               (sly-current-package))))
-     (quote
-      `(swank:apropos-list-for-emacs
-        ,helm-pattern
-        t
-        nil
-        ,(or slime-buffer-package
-             (slime-current-package)))))))
+   'external-only
+   nil
+   (helm-lisp-current-package)))
 
 (defvar helm-lisp--c-source-apropos-symbol-all-external-package
   (helm-lisp--apropos-source
    "Apropos (all external packages)"
-   (if (helm-lisp-sly-p)
-       (quote
-        `(slynk-apropos:apropos-list-for-emacs
-          ,helm-pattern
-          t
-          nil
-          nil))
-     (quote
-      `(swank:apropos-list-for-emacs
-        ,helm-pattern
-        t
-        nil
-        nil)))))
+   'external-only
+   nil
+   nil))
 
 (defvar helm-lisp--c-source-apropos-symbol-all-package
   (helm-lisp--apropos-source
    "Apropos (all packages)"
-   (if (helm-lisp-sly-p)
-       (quote
-        `(slynk-apropos:apropos-list-for-emacs
-          ,helm-pattern
-          nil
-          nil
-          nil))
-     (quote
-      `(swank:apropos-list-for-emacs
-        ,helm-pattern
-        nil
-        nil
-        nil)))))
+   nil
+   nil
+   nil))
 
 (defvar helm-lisp-apropos-sources
   '(helm-lisp--c-source-apropos-symbol-current-package
