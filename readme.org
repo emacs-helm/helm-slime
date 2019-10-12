@@ -1,32 +1,49 @@
 #+TITLE: Helm-SLIME
 
-Helm for [[https://github.com/slime/slime][SLIME]], the Superior Lisp Interaction Mode for Emacs.
+Helm for [[https://github.com/slime/slime][SLIME]], the Superior Lisp Interaction Mode for Emacs, and its cousin [[https://github.com/joaotavora/sly  joaotavora/sly][Sly]].
 
 * Installation
 
-- Add ~helm-slime.el~ to your ~load-path~.
-- Set up SLIME properly.
-- Call ~slime-setup~ and include ~'helm-slime~:
-#+BEGIN_SRC elisp
-  (slime-setup '([others contribs ...] helm-slime))
-#+END_SRC
+Add =helm-slime.el= to your load-path.
+Set up SLIME or Sly properly.
 
-  or simply ~(require 'helm-slime)~ in some appropriate manner.
+If you use SLIME, call ~slime-setup~ and include ~'helm-slime~ as the arguments:
+
+#+begin_src lisp
+(slime-setup '([others contribs ...] helm-slime))
+#+end_src
+
+or simply require ~helm-slime~ in some appropriate manner.
 
 To use Helm instead of the Xref buffer, enable ~global-helm-slime-mode~.
+
+To enable Helm for completion, install [[https://github.com/Sodel-the-Vociferous/helm-company][helm-company]].  With SLIME, you'll
+also need [[https://github.com/anwyn/slime-company/][slime-company]].  Then:
+
+- SLIME:
+  #+begin_src lisp
+  (slime-setup '(slime-company))
+  (require 'helm-company)
+  (define-key slime-repl-mode-map (kbd "<tab>") 'helm-company)
+  #+end_src
+
+- Sly:
+  #+begin_src lisp
+  (add-hook 'sly-mrepl-hook #'company-mode)
+  (require 'helm-company)
+  (define-key sly-mrepl-mode-map (kbd "<tab>") 'helm-company)
+  #+end_src
 
 * Usage
 
 Helm-SLIME defines a few new commands:
 
-- helm-slime-complete :: Select a symbol from the SLIME completion systems.
+- helm-lisp-list-connections :: Yet another Lisp connection list with `helm'.
 
-- helm-slime-list-connections :: Yet another ~slime-list-connections~ with Helm.
+- helm-lisp-apropos :: Yet another ~apropos~ with Helm.
 
-- helm-slime-apropos :: Yet another ~slime-apropos~ with Helm.
+- helm-lisp-repl-history :: Select an input from the REPL history and insert it.
 
-- helm-slime-repl-history :: Select an input from the SLIME REPL history and
-     insert it.
-
-- helm-slime-mini :: Like ~helm-slime-list-connections~, but include an extra
-     source of SLIME-related buffers, like the events buffer or the scratch buffer.
+- helm-lisp-mini :: Like ~helm-lisp-list-connections~, but include an extra
+                    source of Lisp-related buffers, like the events buffer or
+                    the scratch buffer.
