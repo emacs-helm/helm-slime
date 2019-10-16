@@ -28,8 +28,7 @@
 
 ;;; Commentary:
 ;;
-;; Some Helm and SLIME Configurations for using SLIME within the
-;; Helm interface.
+;; A Helm for SLIME.
 ;;
 ;; The complete command list:
 ;;
@@ -41,10 +40,13 @@
 ;;    Yet another `slime-apropos' with `helm'.
 ;;  `helm-slime-repl-history'
 ;;    Select an input from the SLIME repl's history and insert it.
+;;  `helm-slime-mini'
+;;    Like `helm-slime-list-connections', but include an extra
+;;    source of SLIME-related buffers, like the events buffer or the scratch buffer.
 
 ;;; Installation:
 ;;
-;; Put the helm-slime.el, helm.el to your load-path.
+;; Add helm-slime.el to your load-path.
 ;; Set up SLIME properly.
 ;; Call `slime-setup' and include 'helm-slime as the arguments:
 ;;
