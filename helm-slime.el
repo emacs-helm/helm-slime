@@ -446,10 +446,13 @@ will not have anymore separators between candidates."
 (defun helm-slime-repl-history ()
   "Select an input from the SLIME repl's history and insert it."
   (interactive)
-  (when (derived-mode-p 'slime-repl-mode)
+  (cond
+   ((derived-mode-p 'slime-mrepl-mode)
+    (helm-comint-input-ring))
+   ((derived-mode-p 'slime-repl-mode)
     (helm :sources 'helm-slime-source-repl-input-history
           :input (buffer-substring-no-properties (point) slime-repl-input-start-mark)
-          :buffer "*helm SLIME history*")))
+          :buffer "*helm SLIME history*"))))
 
 
 (defun helm-slime-normalize-xrefs (xref-alist)
